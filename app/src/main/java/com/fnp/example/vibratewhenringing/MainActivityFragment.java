@@ -18,6 +18,9 @@ import android.widget.TextView;
  */
 public class MainActivityFragment extends Fragment {
 
+    SwitchCompat mSwitchCompat = null;
+    boolean mIsVibrateWhenRinging = false;
+
     public MainActivityFragment() {
     }
 
@@ -28,19 +31,12 @@ public class MainActivityFragment extends Fragment {
         View v = inflater.inflate(R.layout.fragment_main, container, false);
         RelativeLayout switchLayout = (RelativeLayout) v.findViewById(R.id.switch_layout);
         ((TextView) switchLayout.findViewById(R.id.title)).setText("Vibrate when ringing");
-        final SwitchCompat switchCompat = (SwitchCompat) switchLayout
-                .findViewById(R.id.switchWidget);
+        mSwitchCompat = (SwitchCompat) switchLayout.findViewById(R.id.switchWidget);
 
         switchLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int isVibrateWhenRinging = 0;
-                try {
-                    isVibrateWhenRinging = Settings.System.getInt(getActivity()
-                            .getContentResolver(), "vibrate_when_ringing");
-                } catch (Settings.SettingNotFoundException e) {
-                    e.printStackTrace();
-                }
+                mIsVibrateWhenRinging = isVibrateWhenRinging();
 
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M
                         || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
@@ -48,8 +44,8 @@ public class MainActivityFragment extends Fragment {
                 ))
                 {
                     Settings.System.putInt(getActivity().getContentResolver()
-                            , "vibrate_when_ringing", isVibrateWhenRinging == 0 ? 1 : 0);
-                    switchCompat.setChecked(!switchCompat.isChecked());
+                            , "vibrate_when_ringing", mIsVibrateWhenRinging ? 0 : 1);
+                    mSwitchCompat.setChecked(isVibrateWhenRinging());
                 } else {
                     startActivity(requestWriteSettingsIntent());
                 }
@@ -57,6 +53,22 @@ public class MainActivityFragment extends Fragment {
         });
 
         return v;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        mSwitchCompat.setChecked(isVibrateWhenRinging());
+    }
+
+    private boolean isVibrateWhenRinging() {
+        try {
+            mIsVibrateWhenRinging = Settings.System.getInt(getActivity()
+                    .getContentResolver(), "vibrate_when_ringing") == 1;
+        } catch (Settings.SettingNotFoundException e) {
+            e.printStackTrace();
+        }
+        return mIsVibrateWhenRinging;
     }
 
     private Intent requestWriteSettingsIntent() {
